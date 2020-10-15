@@ -1,3 +1,4 @@
+
 module.exports = function(router, database) {
 
   router.get('/properties', (req, res) => {
