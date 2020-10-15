@@ -66,7 +66,6 @@ const addUser =  function(user) {
   WHERE email = $1;
   `, [user.email])
   .then((res) => {
-    console.log(res)
     return res.rows[0];
   });
 }
@@ -145,8 +144,6 @@ const getAllProperties = function(options, limit = 10) {
   LIMIT $${queryParams.length};
   `;
 
-  console.log(queryString, queryParams);
-
   return pool.query(queryString, queryParams)
   .then(res => res.rows);
 }
@@ -159,9 +156,23 @@ exports.getAllProperties = getAllProperties;
  * @return {Promise<{}>} A promise to the property.
  */
 const addProperty = function(property) {
-  const propertyId = Object.keys(properties).length + 1;
-  property.id = propertyId;
-  properties[propertyId] = property;
-  return Promise.resolve(property);
+  let extract = Object.keys(property);
+  let legalColumns = "owner_id, title, description, thumbnail_photo_url, cover_photo_url, cost_per_night, street, city, province, post_code, country, parking_spaces, number_of_bathrooms, number_of_bedrooms".split(', ');
+  let extract2 = extract.filter(key => legalColumns.includes(key));
+  let tableColummns = extract2.join(", ")
+  let propertyKeys = extract2.map(key => property[key]);
+  let secureValues = [];
+  for (let i = 1; i < propertyKeys.length + 1; i++) {
+    secureValues.push('$' + i);
+  }
+  secureValues = secureValues.join(", ")
+  return pool.query(`
+  INSERT into properties (${tableColummns})
+  VALUES (${secureValues})
+  RETURNING *;
+  `, propertyKeys)
+  .then((res) => {
+    (res => res.rows);
+  });
 }
 exports.addProperty = addProperty;
